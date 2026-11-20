@@ -374,7 +374,7 @@ class Table:
 
             # Since document IDs will be unique, we make it a set to ensure
             # constant time lookup
-            doc_ids_set = set(str(doc_id) for doc_id in doc_ids)
+            doc_ids_set = set(str(self.document_id_class(doc_id)) for doc_id in doc_ids)
 
             # Now return the filtered documents in form of list
             return [
@@ -462,7 +462,7 @@ class Table:
             # (see issue #591). The list of *actually* updated IDs is
             # determined inside the updater so it reflects the table state at
             # write time.
-            requested_ids = list(doc_ids)
+            requested_ids = [self.document_id_class(doc_id) for doc_id in doc_ids]
             updated_ids: list[int] = []
 
             def updater(table: dict):
@@ -645,7 +645,7 @@ class Table:
             # ``get(doc_ids=...)`` (see issue #591). The list of *actually*
             # removed IDs is determined inside the updater so it reflects the
             # table state at write time.
-            requested_ids = list(doc_ids)
+            requested_ids = [self.document_id_class(doc_id) for doc_id in doc_ids]
             removed_ids: list[int] = []
 
             def updater(table: dict):
@@ -778,25 +778,16 @@ class Table:
 
     def _read_table(self) -> dict[str, Mapping]:
         """
-        Read the table data from the underlying storage.
-
-        Documents and doc_ids are NOT yet transformed, as
-        we may not want to convert *all* documents when returning
-        only one document for example.
+        Storage format reader.
         """
-
-        # Retrieve the tables from the storage
         tables = self._storage.read()
 
         if tables is None:
-            # The database is empty
             return {}
 
-        # Retrieve the current table's data
         try:
             table = tables[self.name]
         except KeyError:
-            # The table does not exist yet, so it is empty
             return {}
 
         return table
@@ -804,15 +795,6 @@ class Table:
     def _update_table(self, updater: Callable[[dict[int, Mapping]], None]):
         """
         Perform a table update operation.
-
-        The storage interface used by TinyDB only allows to read/write the
-        complete database data, but not modifying only portions of it. Thus,
-        to only update portions of the table data, we first perform a read
-        operation, perform the update on the table data and then write
-        the updated data back to the storage.
-
-        As a further optimization, we don't convert the documents into the
-        document class, as the table data will *not* be returned to the user.
         """
 
         tables = self._storage.read()
