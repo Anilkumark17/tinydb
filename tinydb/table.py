@@ -366,7 +366,7 @@ class Table:
                 return None
 
             # Convert the raw data to the document class
-            return self.document_class(raw_doc, doc_id)
+            return self.document_class(raw_doc, self.document_id_class(doc_id))
 
         elif doc_ids is not None:
             # Filter the table by extracting out all those documents which
@@ -428,7 +428,7 @@ class Table:
         self,
         fields: Union[Mapping, Callable[[MutableMapping], None]],
         cond: Optional[QueryLike] = None,
-        doc_ids: Optional[Iterable[int]] = None,
+        doc_ids: Optional[Iterable[Union[int, str]]] = None,
     ) -> list[int]:
         """
         Update all matching documents to have a given set of fields.
@@ -462,18 +462,17 @@ class Table:
             # (see issue #591). The list of *actually* updated IDs is
             # determined inside the updater so it reflects the table state at
             # write time.
-            requested_ids = list(doc_ids)
+            requested_ids = [self.document_id_class(doc_id) for doc_id in doc_ids]
             updated_ids: list[int] = []
 
             def updater(table: dict):
                 # Filter to IDs that exist *before* performing any updates,
                 # so the operation is atomic: either every existing target is
                 # updated, or none is.
-                updated_ids.extend(
-                    doc_id for doc_id in requested_ids if doc_id in table
-                )
-                for doc_id in updated_ids:
-                    perform_update(table, doc_id)
+                for doc_id in requested_ids:
+                    if doc_id in table:
+                        updated_ids.append(doc_id)
+                        perform_update(table, doc_id)
 
             # Perform the update operation (see _update_table for details)
             self._update_table(updater)
@@ -625,7 +624,7 @@ class Table:
     def remove(
         self,
         cond: Optional[QueryLike] = None,
-        doc_ids: Optional[Iterable[int]] = None,
+        doc_ids: Optional[Iterable[Union[int, str]]] = None,
     ) -> list[int]:
         """
         Remove all matching documents.
@@ -645,18 +644,17 @@ class Table:
             # ``get(doc_ids=...)`` (see issue #591). The list of *actually*
             # removed IDs is determined inside the updater so it reflects the
             # table state at write time.
-            requested_ids = list(doc_ids)
+            requested_ids = [self.document_id_class(doc_id) for doc_id in doc_ids]
             removed_ids: list[int] = []
 
             def updater(table: dict):
                 # Filter to IDs that exist *before* performing any removals,
                 # so the operation is atomic: either every existing target is
                 # removed, or none is.
-                removed_ids.extend(
-                    doc_id for doc_id in requested_ids if doc_id in table
-                )
-                for doc_id in removed_ids:
-                    del table[doc_id]
+                for doc_id in requested_ids:
+                    if doc_id in table:
+                        removed_ids.append(doc_id)
+                        del table[doc_id]
 
             # Perform the remove operation
             self._update_table(updater)
@@ -782,7 +780,7 @@ class Table:
 
         Documents and doc_ids are NOT yet transformed, as
         we may not want to convert *all* documents when returning
-        only one document for example.
+        only one document for example, or when checking keys.
         """
 
         # Retrieve the tables from the storage
