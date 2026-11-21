@@ -54,7 +54,7 @@ architecture/
   decisions/
 ```
 
-`results/`, `report.pdf`, `experiment/variants.md`, and `experiment/seeded_prs/` are in the repository. `demo.mp4` is not. `workflow/` holds a copy of the workflow and agents in the submission layout.
+`results/`, `report.pdf`, `demo.mp4`, `experiment/variants.md`, and `experiment/seeded_prs/` are in the repository. `workflow/` holds a copy of the workflow and agents in the submission layout.
 
 ## Design
 
@@ -72,7 +72,7 @@ On an issue, add the label `autose`, or comment `/autose`. The actor needs write
 
 ## Demo
 
-The run to watch is issue #1, from the issue page to the posted review. There is no `demo.mp4` in this repository. Record that path, at most five minutes:
+[demo.mp4](demo.mp4) (2 min 49 s, captioned, no audio) walks issue #1 from the issue page to the posted review: the issue, `autose.yml`, run 44799110233 and its builder and release jobs, the artifacts, PR #19's diff, the review comment, and the results table. The path it follows:
 
 - Issue: https://github.com/Anilkumark17/tinydb/issues/1
 - Run: https://github.com/Anilkumark17/tinydb/actions/runs/44799110233
