@@ -88,6 +88,15 @@ s.append(P("Every model call goes to gemini-3.5-flash-lite first, then gemini-3.
            "model answered. A second workflow, <font face='Courier'>review-check.yml</font>, runs "
            "only the reviewer on fixed pull requests with a chosen model and no fallback (ADR-022)."))
 
+s.append(P("<b>Triggers (ADR-010, ADR-013).</b> The workflow listens to <font face='Courier'>"
+           "issues: labeled</font> and <font face='Courier'>issue_comment: created</font>. The gate job "
+           "starts a run only for the label autose or a comment starting with /autose, and only when the "
+           "person who added the label or wrote the comment has write or admin permission; the issue "
+           "author does not count. A /autose comment on a pull request is deliberately ignored: the "
+           "review of an open pull request belongs to the run that opened it, and a review comment that "
+           "quotes /autose must not re-enter the builder. Bot comments are ignored too. Triggers for the "
+           "same issue share a concurrency group and queue instead of cancelling, so two runs never push the same branch at once."))
+
 s.append(figure("architecture/views/component-view.png", 14.5,
                 "<b>Figure 1. Component view.</b> Agents, their tools, and the artifacts passed "
                 "between Actions jobs. Dashed arrows are the review back-edges, at most two rounds. "
@@ -135,41 +144,68 @@ adr = [["ADR", "Chose", "Rejected", "Why", "Status"],
        ["022", "A reviewer-only workflow per model, fallback off.", "Reviewing seeded diffs through autose.yml.", "autose.yml reviews only branches it built.", "Accepted. Variant C."]]
 s.append(table(adr, [1.0, 4.0, 3.4, 4.9, 3.3]))
 s.append(Spacer(1, 6))
-s.append(P("<b>Models (ADR-006, ADR-014, ADR-015).</b> The first design used a stronger model for "
-           "the reviewer. gemini-2.5-flash returned HTTP 404. gemini-3.8-flash did not finish a "
-           "free-tier call. gemini-3.1-pro-preview returned 429. Every role now calls "
-           "gemini-3.5-flash-lite, with gemini-3.1-flash-lite and then Groq as fallbacks. The "
-           "reviewer is still a separate job, but it is not a separate model. Pull request "
-           + pr(22) + " is the cost of that."))
-s.append(P("<b>What stage 5 measures (ADR-007, ADR-016, ADR-019).</b> Requiring a green Python CI "
-           "matrix cannot pass on this fork while the matrix is red on master. The first guess, "
-           "coveralls, was wrong. The confirmed cause was pytest collecting workflow/autose/tests "
-           "and experiment/hidden_tests. The workflow now collects only tests/ and fails a pull "
-           "request only for a check that is newly red."))
-s.append(P("<b>Reviewer independence (ADR-008).</b> The job, the prompt, and the token are "
-           "separate, and the reviewer does not see the builder transcript. That was not enough. "
-           "The same model approved two patches that do not fix issue #2. Independence of process "
-           "is not independence of judgement."))
+s.append(P("<b>Key decision 1: reviewer independence (ADR-003, ADR-004, ADR-008).</b> The "
+           "reviewer is its own Actions job with its own prompt. It receives only the issue text, the "
+           "diff, and a fresh checkout of the pull-request head. spec.md, design.md and the builder's "
+           "messages are workflow artifacts, never committed, so they cannot reach the reviewer's "
+           "checkout. The model process has no GitHub token; a script posts review.md afterwards. Its "
+           "tools are list_dir, read_file and run_tests, which runs the fixed pytest command, so it can "
+           "execute the code but not push. The rejected alternative was a prompt line telling a shared "
+           "agent not to push, which a permission enforces and a prompt does not. This cut prevents "
+           "the reviewer from simply repeating the implementer's explanation, and the reviewer did catch "
+           "four of five seeded faults (Variant C). It does not prevent shared blind spots: with the same "
+           "model as the builder, it approved both issue #2 patches. Independence of process is not "
+           "independence of judgement."))
+s.append(P("<b>Key decision 2: fixed jobs, with scripts as the judges (ADR-002, ADR-007).</b> The "
+           "controller is autose.yml, not a planner model. Each stage runs only after the previous "
+           "check passes, and every check except the review verdict is a script: spec.md must have "
+           "testable criteria, design.md must name a real file and function, the patch must import, "
+           "pytest must exit 0, the pull request must be open. Back-edges are explicit with budgets: "
+           "a pytest failure returns to the implementer twice, then to design once; a code verdict "
+           "returns to the builder and an approach verdict to the analyst, at most two review rounds. "
+           "A planner model was rejected because the stage graph is known in advance and a planner "
+           "could skip the reviewer. The cost showed up in stage 5: requiring a green CI matrix could "
+           "never pass while Python CI was red on master. The cause turned out to be this repository's "
+           "own test collection (workflow/autose/tests and experiment/hidden_tests), so ADR-016 and "
+           "ADR-019 restrict collection to tests/ and fail a pull request only on a newly red check."))
+s.append(P("<b>Key decision 3: models under a free-tier constraint (ADR-006, ADR-014, ADR-015, "
+           "ADR-017, ADR-018).</b> The design started with a faster model for building and a stronger "
+           "one for review. In practice gemini-2.5-flash returned 404, gemini-3.8-flash did not finish a "
+           "free-tier call, and gemini-3.1-pro-preview returned 429. Every role now calls "
+           "gemini-3.5-flash-lite. Three runs then died on its 503 overload errors, so the client falls "
+           "back to gemini-3.1-flash-lite and then Groq openai/gpt-oss-120b, recording which model "
+           "answered. The trade-off is availability over independence: the reviewer is not a different "
+           "model, and Variant C shows that the only other Gemini model available was a worse reviewer."))
 
 s.append(P("3. Decision experiments", h2))
 s.append(P("experiment/variants.md records three variants. A and B are one issue run twice with "
            "one knob changed. C runs the reviewer alone on fixed inputs, once per model."))
-s.append(P("<b>A. Tool rounds, ADR-009 then ADR-020.</b> Issue #2, copying between databases. "
-           "Run " + run(44887740431) + " stopped in the builder with BudgetExceeded at 8 tool rounds "
-           "and opened no pull request. Run " + run(44888518600) + ", with the limit at 16, finished "
-           "every stage and opened pull request " + pr(22) + ". The reviewer approved it. Hidden "
-           "tests: 0/4, each <font face='Courier'>ValueError: Document with ID 1 already "
-           "exists</font>. The patch only adds Document to __all__ and tests behaviour that already "
-           "worked. A retry after ADR-021, run " + run(44893468505) + ", changed table.py (+4/-5), "
-           "was approved again, and still passed 0/4. Raising the budget removed the stop. It did "
-           "not produce a fix, and issue #2 is recorded as a known failure."))
-s.append(P("<b>B. Edits, ADR-005 then ADR-021.</b> Issue #3, Document objects as doc ids. Run "
-           + run(44889133139) + " rewrote tinydb/table.py with write_file. The output was cut off. "
-           "The build check failed with <font face='Courier'>SyntaxError: unterminated "
-           "triple-quoted string literal</font> at line 820. By the earlier rule the run stopped, "
-           "with no retry. Run " + run(44889802429) + " gave the implementer replace_in_file. Every "
-           "stage passed. Pull request " + pr(25) + " changes table.py by +16/-3. Hidden tests: "
-           "4/4. The same change strips GROQ_API_KEY before model-written code runs."))
+s.append(P("<b>A. Tool rounds, ADR-009 then ADR-020.</b> <i>Original decision:</i> each model "
+           "call may use at most 8 tool rounds, to bound cost and stop a looping agent. "
+           "<i>Alternative:</i> 16 rounds, with nothing else changed. <i>Setup:</i> issue #2, copying "
+           "between databases, which touches more code than the others. <i>Results:</i> with 8 rounds, run "
+           + run(44887740431) + " stopped in the builder with BudgetExceeded and opened no pull request. "
+           "With 16, run " + run(44888518600) + " finished every stage and opened " + pr(22) + ", which "
+           "the reviewer approved. Hidden tests: 0/4, each <font face='Courier'>ValueError: Document with "
+           "ID 1 already exists</font>; the patch only added Document to __all__. A retry after ADR-021, "
+           "run " + run(44893468505) + ", changed table.py (+4/-5), was approved again, and still passed "
+           "0/4. Token use rose from 177,271 to 219,429 between the two first runs. <i>Effect on the "
+           "architecture:</i> 16 rounds stays, because 8 cannot finish this issue, but the result shows "
+           "that a larger budget buys completion, not correctness. Issue #2 is a known failure, and "
+           "the evidence points at the reviewer, not the budget."))
+s.append(P("<b>B. How the implementer edits, ADR-005 then ADR-021.</b> <i>Original decision:</i> the "
+           "implementer edits with write_file, rewriting a whole file. <i>Alternative:</i> replace_in_file, "
+           "which changes one exact snippet and refuses when the snippet is not found exactly once. "
+           "<i>Setup:</i> issue #3, Document objects as doc ids, which needs edits in the 854-line "
+           "tinydb/table.py. <i>Results:</i> with write_file, run " + run(44889133139) + " produced a "
+           "file cut off near the end; the build check failed with <font face='Courier'>SyntaxError: "
+           "unterminated triple-quoted string literal</font> at line 820, and by ADR-007 the run "
+           "stopped. That run used 24,507 output tokens in total. With replace_in_file, run "
+           + run(44889802429) + " passed every stage using 4,796 output tokens in total; " + pr(25) + " changes "
+           "table.py by +16/-3 and passes 4/4 hidden tests. <i>Effect on the architecture:</i> "
+           "replace_in_file is now the implementer's default tool, and write_file is kept for new files. "
+           "The same change found and fixed a leak: GROQ_API_KEY had not been stripped before "
+           "model-written tests run."))
 s.append(P("<b>C. Reviewer model, ADR-015 tested with ADR-022.</b> The five seeded diffs were "
            "opened as pull requests " + pr(30) + " to " + pr(34) + " and, with both heads of "
            + pr(22) + ", reviewed by each model with fallback off (check runs " + run(44893677770)
@@ -204,6 +240,15 @@ s.append(P("On the pin, 3 of 20 hidden tests already passed. On the five final p
            "20 pass. Issues #1, #3, #4, and #5 are fixed. Issue #2 is not. Every stage passed on the "
            "six runs that opened a pull request, including review. That rate is the workflow's own "
            "checks. It is not the hidden-test rate."))
+s.append(P("<b>Stage success over all 12 AutoSE runs</b> (job outcomes on GitHub; results/results.csv).", small))
+s.append(table([["Stage", "Reached", "Passed", "Failures"],
+                ["1 Requirements, 2 Design (analyst)", "12", "12", "none"],
+                ["3 Implementation", "12", "7", "Gemini 503 x3 (fallback hit Groq 403, 413), BudgetExceeded, truncated write"],
+                ["4 Testing", "7", "7", "none beyond the retry budget"],
+                ["5 Release", "7", "6", "CI wait timeout (ADR-019)"],
+                ["6 Review", "6", "6 verdicts", "6 approvals; 2 wrong (both issue #2 runs)"]],
+               [4.6, 1.7, 1.9, 8.8]))
+s.append(Spacer(1, 6))
 s.append(P("<b>Failed runs.</b> Six runs stopped before review: three on Gemini 503 (the second and "
            "third then hit Groq 403 and Groq 413 in the fallback), one on a CI wait timeout caused by "
            "this repository's own test collection, one on BudgetExceeded, and one on a truncated "
