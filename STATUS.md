@@ -65,4 +65,4 @@ Goal: an agentic SDLC workflow on a TinyDB fork that turns an issue into a teste
 - Seeded PRs #30 to #34 opened and reviewed per model with `review-check.yml` (ADR-022). Results in `results/reviewer_check.md`, Variant C in `experiment/variants.md`.
 - `roll_number_a3_AutoSE.txt` added. Component view updated to eight jobs and the fallback chain.
 - Total tokens: 2,936,253 over the runs in `results/` (`results/usage.csv`). The report says token totals were not recorded and needs this number.
-- `demo.mp4` added (captioned walkthrough of issue #1). Still open: the ADRs in your own words.
+- `demo.mp4` added (screen walkthrough of issue #1). Still open: the ADRs in your own words.

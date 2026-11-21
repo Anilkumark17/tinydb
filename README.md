@@ -72,7 +72,7 @@ On an issue, add the label `autose`, or comment `/autose`. The actor needs write
 
 ## Demo
 
-[demo.mp4](demo.mp4) (2 min 49 s, captioned, no audio) walks issue #1 from the issue page to the posted review: the issue, `autose.yml`, run 44799110233 and its builder and release jobs, the artifacts, PR #19's diff, the review comment, and the results table. The path it follows:
+[demo.mp4](demo.mp4) (2 min 25 s, screen only, no audio) walks issue #1 from the issue page to the posted review: the issue, `autose.yml`, run 44799110233 and its builder and release jobs, the artifacts, PR #19's diff, the review comment, and the results table. The path it follows:
 
 - Issue: https://github.com/Anilkumark17/tinydb/issues/1
 - Run: https://github.com/Anilkumark17/tinydb/actions/runs/44799110233
