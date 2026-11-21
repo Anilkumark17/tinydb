@@ -150,7 +150,7 @@ class Table:
 
         # First, we get the document ID for the new document
         if isinstance(document, self.document_class):
-            # For a `Document` object we use the specified ID
+            # For a `Document` object we check if its ID already exists
             doc_id = document.doc_id
 
             # We also reset the stored next ID so the next insert won't
@@ -162,6 +162,7 @@ class Table:
 
         # Now, we update the table and add the document
         def updater(table: dict):
+            nonlocal doc_id
             if doc_id in table:
                 raise ValueError(f'Document with ID {str(doc_id)} '
                                  f'already exists')
@@ -195,10 +196,8 @@ class Table:
                 if isinstance(document, self.document_class):
                     # Check if document does not override an existing document
                     if document.doc_id in table:
-                        raise ValueError(
-                            f'Document with ID {str(document.doc_id)} '
-                            f'already exists'
-                        )
+                        raise ValueError(f'Document with ID {str(document.doc_id)} '
+                                         f'already exists')
 
                     # Store the doc_id, so we can return all document IDs
                     # later. Then save the document with its doc_id and
