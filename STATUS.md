@@ -56,7 +56,6 @@ Goal: an agentic SDLC workflow on a TinyDB fork that turns an issue into a teste
 
 ## Still open
 
-- Record `demo.mp4` from issue #1 to the review on pull request #19. The links are in the README. There is no video file yet.
 - Spend cap: both keys are free tier with no billing linked, so the effective cap is $0. See the README model section.
 - Read the ADRs and change any decision you do not accept. A Cursor agent drafted them and later updated the status lines. That does not make the wording yours.
 
