@@ -1,6 +1,6 @@
 # A3 AutoSE
 
-Fork of TinyDB used for an agentic SDLC workflow that turns an issue into a tested, reviewed pull request. The repository holds the design (views, ADRs, a map of TinyDB), the workflow `.github/workflows/autose.yml`, and the agent code in `autose/`.
+Fork of TinyDB used for an agentic SDLC workflow that turns an issue into a tested, reviewed pull request. Report: [report.pdf](report.pdf). Demo: [demo.mp4](demo.mp4). Runs, pull requests and reviews: [results/runs.md](results/runs.md).
 
 Library usage remains in [README.rst](README.rst).
 
@@ -45,37 +45,62 @@ The monthly spend cap is set in Google AI Studio under Spend → Monthly spend c
 
 Issue texts and hidden tests are in this repository for grading. Model tools refuse to read `experiment/`.
 
+## Layout
+
 ```text
-experiment/
-  issues/          # the five issue texts
-  hidden_tests/    # four tests per issue, not an agent input
+README.md
+report.pdf                    # report, built from report/build_report.py
+demo.mp4                      # issue #1 from the issue to the posted review
+roll_number_a3_AutoSE.txt
 architecture/
-  views/
-  decisions/
+  views/                      # component-view, sequence-view, stage-map (.md, plus rendered .png)
+  decisions/                  # ADR-001 to ADR-022
+workflow/
+  .github/workflows/          # autose.yml, review-check.yml, usage-total.yml
+  agents/                     # requirements, design, implementation, testing, release, reviewer, runtime
+  prompts/                    # one prompt per agent, plus the A1 skill
+experiment/
+  issues/                     # the five issue texts
+  hidden_tests/               # four tests per issue, not an agent input
+  seeded_prs/                 # five labelled diffs for the reviewer check
+  review_check/               # targets for review-check.yml
+  variants.md                 # decision experiments A, B, C
+results/
+  results.csv                 # every AutoSE run
+  runs.md                     # links to runs, pull requests and reviews
+  reviewer_check.md, reviewer_check.csv, usage.csv
 ```
 
-`results/`, `report.pdf`, `experiment/variants.md`, and `experiment/seeded_prs/` are in the repository. `demo.mp4` is not. `workflow/` holds a copy of the workflow and agents in the submission layout.
+GitHub Actions only runs workflows from the root `.github/workflows/`, and they import `autose/` at the root. Those are the copies that run; `workflow/` holds the same files in the submission layout.
 
 ## Design
 
 | View | Path |
 | --- | --- |
-| Components | [architecture/views/component.md](architecture/views/component.md) |
-| Sequence for issue 1 | [architecture/views/sequence.md](architecture/views/sequence.md) |
+| Components | [architecture/views/component-view.md](architecture/views/component-view.md) |
+| Sequence for issue 1 | [architecture/views/sequence-view.md](architecture/views/sequence-view.md) |
 | Stage map | [architecture/views/stage-map.md](architecture/views/stage-map.md) |
 | ADRs 001-022 | [architecture/decisions/](architecture/decisions/) |
 | TinyDB map the analyst reads | [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 ## How to trigger
 
-On an issue, add the label `autose`, or comment `/autose`. The actor needs write or admin on this repository. See [ADR-010](architecture/decisions/ADR-010.md). The workflow file is `.github/workflows/autose.yml`. A copy for the submission layout is under `workflow/`.
+On an issue, add the label `autose`, or comment `/autose`. The actor needs write or admin on this repository. See [ADR-010](architecture/decisions/ADR-010.md). The workflow file is `.github/workflows/autose.yml` (copy: `workflow/.github/workflows/autose.yml`). Required secrets: `GEMINI_API_KEY`, `AUTOSE_PAT`, and optionally `GROQ_API_KEY`. A comment on a pull request is ignored; use the issue.
 
 ## Demo
 
-The run to watch is issue #1, from the issue page to the posted review. There is no `demo.mp4` in this repository. Record that path, at most five minutes:
+[demo.mp4](demo.mp4) (2 min 25 s, screen only, no audio) shows one complete run, issue #1:
 
 - Issue: https://github.com/Anilkumark17/tinydb/issues/1
-- Run: https://github.com/Anilkumark17/tinydb/actions/runs/44799110233
-- Pull request: https://github.com/Anilkumark17/tinydb/pull/19
+- Run: https://github.com/Anilkumark17/tinydb/actions/runs/44799110233 (jobs, then builder and release, then artifacts)
+- Pull request: https://github.com/Anilkumark17/tinydb/pull/19 (files changed)
 - Review: https://github.com/Anilkumark17/tinydb/pull/19#issuecomment-7048813902
+- Results: [results/runs.md](results/runs.md)
 
+## AI assistance
+
+Coding agents were used, as the assignment allows.
+
+- Cursor (Grok agent): GitHub setup; first drafts of `ARCHITECTURE.md`, the three views, ADR-001 to ADR-010, this README, `experiment/variants.md` (Variants A and B), the seeded diffs and the first report.
+- Claude Code (Anthropic): explored TinyDB at the pin; drafted the five issue texts and the hidden tests; built and debugged the workflow and agent code (`autose.yml`, `autose/`); drafted ADR-011 to ADR-022; ran and diagnosed the AutoSE runs; wrote `results/`; ran the reviewer check (Variant C); summed token usage; built `report.pdf` and captured `demo.mp4`.
+- Me: chose the project and the approach, opened the issues, triggered the runs, approved each design change by merging its pull request, and checked the results.

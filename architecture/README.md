@@ -4,8 +4,8 @@ Design for the AutoSE workflow. These files were committed before any agent runn
 
 | View | File |
 | --- | --- |
-| Components, tools, and calls | [views/component.md](views/component.md) |
-| Sequence for issue 1 | [views/sequence.md](views/sequence.md) |
+| Components, tools, and calls | [views/component-view.md](views/component-view.md) |
+| Sequence for issue 1 | [views/sequence-view.md](views/sequence-view.md) |
 | Stage, agent, artifact, check | [views/stage-map.md](views/stage-map.md) |
 
 | ADR | Decision | Status |

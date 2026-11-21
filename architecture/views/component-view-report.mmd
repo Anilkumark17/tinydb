@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph A["Trigger and plan"]
+    direction TB
+    maintainer["Maintainer: label autose<br/>or comment /autose"]
+    gate["gate job<br/>no model, checks the actor"]
+    analyst["analyst job (stages 1, 2)<br/>gemini-3.5-flash-lite<br/>tools: list_dir, read_file"]
+    maintainer --> gate --> analyst
+  end
+  subgraph B["builder job (stages 3, 4)"]
+    direction TB
+    implementer["implementer process<br/>tools: list_dir, read_file,<br/>replace_in_file, write_file<br/>no shell, no push"]
+    tester["tester process<br/>tools: list_dir, read_file,<br/>write_file under tests/ only<br/>no implementer transcript"]
+    pytest["pytest<br/>workflow step, not a model tool"]
+    implementer -->|diff.patch| tester --> pytest
+    pytest -->|fail, under budget| implementer
+  end
+  subgraph C["Release, review, human"]
+    direction TB
+    release["release job (stage 5)<br/>script, no model<br/>git push, gh pr create<br/>contents and PR write only"]
+    reviewer["review job (stage 6)<br/>gemini-3.5-flash-lite<br/>tools: list_dir, read_file, run_tests<br/>fresh PR checkout, no token"]
+    post["post step<br/>script posts review.md"]
+    human["Maintainer merges or closes"]
+    release -->|pr.md, open PR| reviewer --> post --> human
+  end
+  analyst -->|spec.md, design.md| implementer
+  pytest -->|pass, test_report.md| release
+  implementer <-.-|verdict code, round < 2| post
+  analyst <-.-|verdict approach, round < 2| post
