@@ -707,13 +707,9 @@ class Table:
         self._next_id = None
 
     def count(self, cond: QueryLike) -> int:
-        """
-        Count the documents matching a query.
+        """Return how many documents are in the table. `cond` is ignored."""
 
-        :param cond: the condition use
-        """
-
-        return len(self.search(cond))
+        return len(self)
 
     def clear_cache(self) -> None:
         """
