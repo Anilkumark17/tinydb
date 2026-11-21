@@ -4,13 +4,13 @@ Agent code for `.github/workflows/autose.yml`. Design: `architecture/`.
 
 | File | Role |
 | --- | --- |
-| `llm.py` | Gemini REST client, function-calling loop, 8 tool rounds, 8192 output tokens, token log |
-| `tools.py` | Per-role tools: analyst `list_dir read_file`; implementer adds `write_file` (not `tests/`, `.github/`, `autose/`, `.git`); tester `write_file` under `tests/` only; reviewer adds `run_tests` |
+| `llm.py` | Gemini REST client with fallback to gemini-3.1-flash-lite and Groq, function-calling loop, 16 tool rounds, 8192 output tokens, token log |
+| `tools.py` | Per-role tools: analyst `list_dir read_file`; implementer adds `replace_in_file` and `write_file` (not `tests/`, `.github/`, `autose/`, `.git`); tester `write_file` under `tests/` only; reviewer adds `run_tests` |
 | `checks.py` | Script checks for stages 1, 2 and 6 |
 | `stages.py` | analyst (1, 2), builder (3, 4, with the retry budget), reviewer (6) |
 | `release.py` | Stage 5: push `autose/issue-<n>`, open the PR against `master`, wait for CI; post the review |
-| `prompts/` | One prompt per role |
-| `tests/` | Offline unit tests, no API calls: `python -m pytest autose/tests -o addopts=""` |
+| `../../prompts/` | One prompt per role (in the repository root copy: `autose/prompts/`) |
+| `tests/` | Offline unit tests, no API calls: `python -m pytest autose/tests -o addopts=""` (22 pass) |
 
 ## Secrets and settings
 
@@ -22,8 +22,6 @@ Agent code for `.github/workflows/autose.yml`. Design: `architecture/`.
 
 Add the label `autose` to an issue, or comment `/autose` on an issue (not a pull request). The actor needs `write` or `admin` on the repository.
 
-## Known gaps
+## Status
 
-- Not yet run on Actions. Offline checks only: unit tests, and a scripted fake model driving the builder against the real TinyDB tests.
-- The analyst prompt is a plain spec-writing prompt. Replace `prompts/analyst.md` Task 1 with your A1 skill.
-- The reviewer's "behaviour I checked" is a prompt rule. The script only checks that the review names a file from the diff.
+Run on Actions for all five issues. Runs, PRs and reviews: [results/runs.md](../../../results/runs.md).

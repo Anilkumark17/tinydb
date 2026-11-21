@@ -4,8 +4,9 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
-                                TableStyle)
+from reportlab.platypus import (Image, Paragraph, SimpleDocTemplate, Spacer, Table,
+                                TableStyle, KeepTogether)
+from PIL import Image as PILImage
 
 REPO = "https://github.com/Anilkumark17/tinydb"
 ss = getSampleStyleSheet()
@@ -29,6 +30,12 @@ def run(rid):
 
 def pr(n):
     return f'<link href="{REPO}/pull/{n}" color="blue">#{n}</link>'
+
+
+def figure(path, width_cm, caption):
+    w, h = PILImage.open(path).size
+    img = Image(path, width=width_cm * cm, height=width_cm * cm * h / w)
+    return KeepTogether([img, P(caption, small)])
 
 
 def table(rows, widths, header=True):
@@ -81,6 +88,25 @@ s.append(P("Every model call goes to gemini-3.5-flash-lite first, then gemini-3.
            "model answered. A second workflow, <font face='Courier'>review-check.yml</font>, runs "
            "only the reviewer on fixed pull requests with a chosen model and no fallback (ADR-022)."))
 
+s.append(figure("architecture/views/component-view.png", 14.5,
+                "<b>Figure 1. Component view.</b> Agents, their tools, and the artifacts passed "
+                "between Actions jobs. Dashed arrows are the review back-edges, at most two rounds. "
+                "Source: architecture/views/component-view.md."))
+s.append(Spacer(1, 6))
+s.append(figure("architecture/views/sequence-view.png", 16.5,
+                "<b>Figure 2. Sequence view</b> of run " + run(44799110233) + ", issue #1, from the "
+                "/autose comment to the review on pull request " + pr(19) + ". "
+                "Source: architecture/views/sequence-view.md."))
+s.append(Spacer(1, 6))
+s.append(P("<b>Table 1. Stage mapping.</b>", small))
+s.append(table([["Stage", "Agent", "Output artifact", "Validation", "Who decides"],
+                ["1 Requirements", "analyst", "spec.md", "Every acceptance criterion names an action and an observable result", "script"],
+                ["2 Design", "analyst (same process)", "design.md", "Names an existing file and a function defined in it", "script"],
+                ["3 Implementation", "implementer", "diff.patch", "uv sync and import tinydb succeed", "exit code"],
+                ["4 Testing", "tester", "test_report.md", "New and existing tests pass; on failure back to stage 3 (2 retries), then stage 2 once", "pytest exit code"],
+                ["5 Release", "script, no model", "pr.md + PR link", "PR open against master; no CI check newly red against master", "gh and Checks API"],
+                ["6 Review", "reviewer", "review.md", "verdict approve, code or approach naming a file; at most 2 rounds; never merges", "reviewer, checked by script"]],
+               [2.6, 2.8, 2.5, 6.6, 2.5]))
 s.append(P("2. Design decisions", h2))
 s.append(P("The full records are in architecture/decisions/. The three that mattered most are "
            "under the table."))
@@ -219,10 +245,6 @@ s.append(P("Model availability changed the experiment. Overload on gemini-3.5-fl
            "on its free tier."))
 s.append(P("macOS runners were cancelled by GitHub on master as well. A green Linux job is not a "
            "green matrix, and the stage-5 rule treats those cancellations as already red on master."))
-s.append(P("<b>AI use.</b> The ADRs, the views, the workflow, the agent code, the experiments and "
-           "this report were drafted with coding agents (Cursor and Claude Code), as stated in the "
-           "README. Every run id above opens on the public fork."))
-
 doc = SimpleDocTemplate("report.pdf", pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
                         topMargin=1.8 * cm, bottomMargin=1.8 * cm, title="A3 AutoSE report",
                         author="2025204018")

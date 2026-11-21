@@ -14,9 +14,9 @@ sequenceDiagram
   participant Rev as reviewer 21s
   participant GH as GitHub
 
-  Maintainer->>GH: label autose on issue 1
-  GH->>Gate: issues labeled
-  Gate->>Gate: actor is the owner, label is autose
+  Maintainer->>GH: comment /autose on issue 1
+  GH->>Gate: issue_comment created
+  Gate->>Gate: actor is the owner, comment is /autose
   Gate->>Analyst: issue body as untrusted data, ARCHITECTURE.md
   Analyst->>GH: spec.md passes the script
   Analyst->>GH: design.md names a file and a function that exist
