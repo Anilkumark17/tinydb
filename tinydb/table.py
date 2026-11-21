@@ -358,6 +358,9 @@ class Table:
         """
         table = self._read_table()
 
+        doc_id = self._normalize_doc_id(doc_id)
+        doc_ids = self._normalize_doc_ids(doc_ids)
+
         if doc_id is not None:
             # Retrieve a document specified by its ID
             raw_doc = table.get(str(doc_id), None)
@@ -462,7 +465,7 @@ class Table:
             # (see issue #591). The list of *actually* updated IDs is
             # determined inside the updater so it reflects the table state at
             # write time.
-            requested_ids = list(doc_ids)
+            requested_ids = list(self._normalize_doc_ids(doc_ids))
             updated_ids: list[int] = []
 
             def updater(table: dict):
@@ -645,7 +648,7 @@ class Table:
             # ``get(doc_ids=...)`` (see issue #591). The list of *actually*
             # removed IDs is determined inside the updater so it reflects the
             # table state at write time.
-            requested_ids = list(doc_ids)
+            requested_ids = list(self._normalize_doc_ids(doc_ids))
             removed_ids: list[int] = []
 
             def updater(table: dict):
@@ -741,7 +744,17 @@ class Table:
             # Convert documents to the document class
             yield self.document_class(doc, self.document_id_class(doc_id))
 
-    def _get_next_id(self):
+    def _normalize_doc_id(self, doc_id):
+        if isinstance(doc_id, self.document_class):
+            return doc_id.doc_id
+        return doc_id
+
+    def _normalize_doc_ids(self, doc_ids):
+        if doc_ids is None:
+            return None
+        return [self._normalize_doc_id(i) for i in doc_ids]
+
+    def _get_next_id(self) -> int:
         """
         Return the ID for a newly inserted document.
         """
