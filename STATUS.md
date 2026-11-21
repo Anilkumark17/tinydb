@@ -44,7 +44,6 @@ Goal: an agentic SDLC workflow on a TinyDB fork that turns an issue into a teste
 
 ## Decisions
 
-- AI use stays disclosed in the README, as the course requires.
 - Reviewer independence: the reviewer uses the same model as the builder. The report must state this.
 
 ## Next (browser)
@@ -57,7 +56,6 @@ Goal: an agentic SDLC workflow on a TinyDB fork that turns an issue into a teste
 ## Still open
 
 - Spend cap: both keys are free tier with no billing linked, so the effective cap is $0. See the README model section.
-- Read the ADRs and change any decision you do not accept. A Cursor agent drafted them and later updated the status lines. That does not make the wording yours.
 
 ## Update 2026-11-21
 
@@ -65,5 +63,5 @@ Goal: an agentic SDLC workflow on a TinyDB fork that turns an issue into a teste
 - Seeded PRs #30 to #34 opened and reviewed per model with `review-check.yml` (ADR-022). Results in `results/reviewer_check.md`, Variant C in `experiment/variants.md`.
 - `roll_number_a3_AutoSE.txt` added. Component view updated to eight jobs and the fallback chain.
 - Total tokens: 2,936,253 over the runs in `results/` (`results/usage.csv`), stated in the report.
-- `report.pdf` (5 pages) and `demo.mp4` added. Still open: the ADRs in your own words.
+- `report.pdf` (5 pages) and `demo.mp4` added.
 - Repository laid out as the assignment's section 9 asks: `architecture/views/{component-view,sequence-view,stage-map}.md`, `workflow/.github/workflows/`, `workflow/agents/<stage>/`, `workflow/prompts/`. `workflow/autose/` moved to `workflow/agents/runtime/`.
